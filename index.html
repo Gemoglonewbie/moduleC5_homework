@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Приложение для запроса картинок</title>
+</head>
+<body>
+    <h1>Приложение для запроса картинок</h1>
+    <label for="pageInput">Номер страницы:</label>
+    <input type="text" id="pageInput" />
+    <br />
+    <label for="limitInput">Лимит:</label>
+    <input type="text" id="limitInput" />
+    <br />
+    <button id="requestButton">Запрос</button>
+    <br />
+    <p id="errorText"></p>
+    <div id="imageContainer"></div>
+
+    <script>
+        // Получаем ссылку на элементы интерфейса
+        const pageInput = document.getElementById('pageInput');
+        const limitInput = document.getElementById('limitInput');
+        const requestButton = document.getElementById('requestButton');
+        const errorText = document.getElementById('errorText');
+        const imageContainer = document.getElementById('imageContainer');
+
+        // Обработчик клика на кнопку "Запрос"
+        requestButton.addEventListener('click', () => {
+            // Получаем значения из полей ввода
+            const page = parseInt(pageInput.value);
+            const limit = parseInt(limitInput.value);
+
+            // Проверка на валидность введенных данных
+            if (isNaN(page) || page < 1 || page > 10) {
+                errorText.textContent = 'Номер страницы вне диапазона от 1 до 10';
+                imageContainer.innerHTML = '';
+                return;
+            }
+
+            if (isNaN(limit) || limit < 1 || limit > 10) {
+                errorText.textContent = 'Лимит вне диапазона от 1 до 10';
+                imageContainer.innerHTML = '';
+                return;
+            }
+
+            // Сброс текста ошибки
+            errorText.textContent = '';
+
+            // Формируем URL для запроса картинок
+            const url = `https://picsum.photos/v2/list?page=${page}&limit=${limit}`;
+
+            // Отправка GET-запроса
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    // Очистка контейнера с картинками
+                    imageContainer.innerHTML = '';
+
+                    // Отображение полученных картинок
+                    data.forEach(image => {
+                        const imgElement = document.createElement('img');
+                        imgElement.src = image.download_url;
+                        imageContainer.appendChild(imgElement);
+                    });
+
+                    // Сохранение успешно выполненного запроса в localStorage
+                    localStorage.setItem('lastRequest', JSON.stringify({ page, limit }));
+                })
+                .catch(error => {
+                    console.error('Ошибка при выполнении запроса:', error);
+                });
+        });
+
+        // Проверяем наличие данных последнего успешного запроса в localStorage при загрузке страницы
+        const lastRequest = localStorage.getItem('lastRequest');
+        if (lastRequest) {
+            const { page, limit } = JSON.parse(lastRequest);
+            pageInput.value = page;
+            limitInput.value = limit;
+            requestButton.click(); // Автоматически запускаем запрос
+        }
+    </script>
+</body>
+</html>
